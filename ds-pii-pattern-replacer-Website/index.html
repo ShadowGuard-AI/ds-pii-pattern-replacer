@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ds-pii-pattern-replacer: the redaction desk</title>
+<style>
+  /* I styled this page like a declassified file on a desk: paper,
+     typewriter lines, and black bars where the people used to be. */
+  :root { --paper:#f2ecdc; --ink:#211d16; --bar:#17150f; --red:#a33327;
+          --edge:#c9bfa4; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#262219; color:var(--ink);
+         font-family: Georgia, serif; }
+  .sheet { max-width:880px; margin:2rem auto; background:var(--paper);
+           padding:2.2rem 2.4rem 2.6rem; border-radius:3px;
+           box-shadow:0 8px 40px rgba(0,0,0,0.55); }
+  header img { max-width:100%; height:auto; display:block; margin:0 auto; }
+  h1 { text-align:center; font-size:1.8rem; margin:1rem 0 0.3rem; }
+  .sub { text-align:center; max-width:38rem; margin:0 auto 1.4rem;
+         line-height:1.55; }
+  h2 { border-bottom:2px solid var(--ink); padding-bottom:0.25rem;
+       margin-top:2.2rem; font-size:1.25rem;
+       text-transform:uppercase; letter-spacing:0.08em; }
+  p, li { line-height:1.6; }
+  .doc { background:#fbf7ea; border:1px solid var(--edge);
+         padding:1.1rem 1.2rem; font-family:'Courier New', monospace;
+         font-size:0.92rem; line-height:1.65; white-space:pre-wrap;
+         word-break:break-word; }
+  .bar { background:var(--bar); color:var(--bar); padding:0 0.3rem;
+         border-radius:2px; user-select:none; }
+  .tok { background:var(--red); color:#fff; padding:0 0.35rem;
+         border-radius:2px; font-weight:bold; }
+  .stamp { display:inline-block; border:3px solid var(--red);
+           color:var(--red); font-weight:bold; letter-spacing:0.2em;
+           padding:0.25rem 0.8rem; transform:rotate(-4deg);
+           margin:0.6rem 0; text-transform:uppercase; }
+  button { font-family:inherit; font-size:1rem; cursor:pointer;
+           background:var(--ink); color:var(--paper); border:none;
+           padding:0.55rem 1.1rem; border-radius:3px; }
+  .orders { columns:1; }
+  @media (min-width:700px) { .orders { columns:2; column-gap:2rem; } }
+  img.schematic { width:100%; height:auto; border:1px solid var(--edge); }
+  code { font-family:'Courier New', monospace; }
+  pre.cmd { background:var(--bar); color:#e8e2cf; padding:0.8rem 1rem;
+            border-radius:4px; overflow-x:auto; }
+  footer { text-align:center; color:#8d8570; font-size:0.88rem;
+           padding:0 1rem 2rem; }
+  a { color:var(--red); }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <header>
+    <img src="assets/banner.png" alt="ds-pii-pattern-replacer banner">
+    <h1>ds-pii-pattern-replacer</h1>
+    <p class="sub">Hand me a text file and I hand it back with the
+    people taken out: email addresses, phone numbers, Social Security
+    numbers, and payment card numbers, each replaced by a plain
+    token. The file stays useful. The people stay private.</p>
+  </header>
+
+  <h2>Exhibit A: one file, before and after</h2>
+  <p>This is the tool's own test fixture, the published test numbers
+  and 555-range fiction its test suite runs on, and the exact output
+  the tool produced from it. Use the button to flip the file.</p>
+  <div class="stamp" id="stamp">Original</div>
+  <div class="doc" id="doc-before">Customer export, handle with care
+Maria Garcia, <span class="bar">maria.garcia@example.com</span>, <span class="bar">(262) 555-0147</span>
+J Doe, <span class="bar">j.doe@test.org</span>, phone <span class="bar">262-555-0199</span>
+Card on file: <span class="bar">4111-1111-1111-1111</span>
+SSN for payroll: <span class="bar">123-45-6789</span>
+Not a card (fails checksum): 4111 1111 1111 1112
+Not SSNs: 666-45-6789 and 900-45-6789
+Order number 12345678, placed 2026, total 19.99</div>
+  <div class="doc" id="doc-after" hidden>Customer export, handle with care
+Maria Garcia, <span class="tok">[EMAIL]</span>, <span class="tok">[PHONE]</span>
+J Doe, <span class="tok">[EMAIL]</span>, phone <span class="tok">[PHONE]</span>
+Card on file: <span class="tok">[CARD]</span>
+SSN for payroll: <span class="tok">[SSN]</span>
+Not a card (fails checksum): 4111 1111 1111 1112
+Not SSNs: 666-45-6789 and 900-45-6789
+Order number 12345678, placed 2026, total 19.99</div>
+  <p><button id="flip" type="button">Show the cleaned file</button>
+  <span id="summary">Summary printed by the run: replaced 6 item(s):
+  card=1, email=2, phone=2, ssn=1.</span></p>
+  <p>Notice what survived: the card number that fails its checksum,
+  and the number ranges the Social Security Administration never
+  issues. I redact people, not arithmetic.</p>
+
+  <h2>Standing orders</h2>
+  <div class="orders">
+    <p><strong>Counts, never values.</strong> The matched data is
+    never printed anywhere, not in the summary, not in an error.</p>
+    <p><strong>Nothing found, nothing claimed.</strong> A file with
+    no matches exits non-zero and no output is written. An untouched
+    copy does not get to call itself cleaned.</p>
+    <p><strong>The original is sacred.</strong> Point the output at
+    the input file and I refuse, on the record, with exit code 2.</p>
+    <p><strong>Cards must prove it.</strong> A candidate card number
+    has to pass the Luhn checksum before it earns a redaction.</p>
+  </div>
+
+  <h2>Run it</h2>
+  <pre class="cmd">python3 main.py customers.txt --output customers-clean.txt</pre>
+  <p>Python 3, standard library only. Limit the sweep with
+  <code>--types email,phone</code>, read from stdin with <code>-</code>
+  as the input, and take the summary as JSON with
+  <code>--json</code>. Full documentation:
+  <a href="https://github.com/ShadowGuard-AI/ds-pii-pattern-replacer">the repository</a>.</p>
+
+  <h2>The apparatus</h2>
+  <img class="schematic" src="assets/schematic.png"
+       alt="Hand-drawn invention schematic of ds-pii-pattern-replacer">
+</div>
+<footer>
+  ds-pii-pattern-replacer is MIT licensed. Copyright (c) Gavin K (@Epsilon0xCell).
+</footer>
+<script>
+  // One button, two honest states of the same file. Both versions
+  // are real captured content from the test run; the script only
+  // decides which one is face up.
+  var before = document.getElementById('doc-before');
+  var after = document.getElementById('doc-after');
+  var stamp = document.getElementById('stamp');
+  var flip = document.getElementById('flip');
+  flip.addEventListener('click', function() {
+    var showingAfter = !after.hidden;
+    after.hidden = showingAfter;
+    before.hidden = !showingAfter;
+    stamp.textContent = showingAfter ? 'Original' : 'Cleaned';
+    flip.textContent = showingAfter ? 'Show the cleaned file'
+                                    : 'Show the original file';
+  });
+</script>
+</body>
+</html>
