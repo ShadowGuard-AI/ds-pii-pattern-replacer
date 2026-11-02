@@ -81,6 +81,10 @@ The example values are the usual published test numbers and
 - `2`: nothing was processed (missing or empty input, no PII found,
   unknown `--types` value, or the refused in-place output).
 
+## Verified in this wave
+
+No factual bug was found in the claims above. Runs in this wave, on the printed example, cleaned it to 4 items (card=1, email=1, phone=1, ssn=1); the 6 item summary quoted in the example refers to the fuller test file the example is drawn from, not to the printed snippet alone. A file with no PII exits 2 and writes no output file. An output path resolving to the input file is refused with exit 2. The JSON summary prints to stderr.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
